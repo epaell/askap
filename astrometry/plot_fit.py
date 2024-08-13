@@ -51,8 +51,8 @@ fig, axes = plt.subplots(1,1, figsize=(8,8))
 kwargs1 = {'angles':'uv', 'scale_units':'xy', 'pivot':'mid', 'scale':2, 'headwidth':4, 'headlength':3, 'headaxislength':2, 'width':0.01}
 
 axes.quiver(-boffsets[:,0], boffsets[:,1], fitted_rel[0], fitted_rel[1], **kwargs1)
-for beam in range(36):
-    print("Beam %02d : dx=%6.3f, dy=%6.3f" %(beam, fitted_rel[0][beam], fitted_rel[1][beam]))
+#for beam in range(36):
+#    print("Beam %02d : dx=%6.3f, dy=%6.3f" %(beam, fitted_rel[0][beam], fitted_rel[1][beam]))
 #    print(fitted_rel[0], fitted_rel[1])
 axes.quiver(-boffsets[:,0], boffsets[:,1], fitted_rel[0], fitted_rel[1], **kwargs1)
 
