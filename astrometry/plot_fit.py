@@ -12,9 +12,10 @@ import astropy.table as at
 import matplotlib.pyplot as plt
 from astropy.table import Table
 
+db_base_path = "/Users/len067/Desktop/aces/calibration/askap_surveys"
 survey = "RACS"
 epoch = 9 # RACS-low3
-db_path = "/Users/len067/Desktop/aces/calibration/askap_surveys/%s/db/epoch_%d/field_data.csv" %(survey, epoch)
+db_path = "%s/%s/db/epoch_%d/field_data.csv" %(db_base_path, survey, epoch)
 if os.path.exists(db_path) == False:
     sys.exit("Unable to load database")
 field_data = Table.read(db_path, format='csv')

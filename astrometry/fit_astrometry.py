@@ -96,7 +96,7 @@ def get_cols(fmt):
 # and extract the necessary quantities
 def process_sbid(flist, sbid, field_name):
     flist.sort()
-    print(f'field {field_name}')
+#    print(f'field {field_name}')
 
     # Check the catalogue format
     fmt = [fname.split('.')[-1] for fname in flist]
@@ -108,7 +108,7 @@ def process_sbid(flist, sbid, field_name):
 
     ares_min = 0.2   # Minimum ratio of int / peak
     ares_max = 1.2   # Maximum ratio of int / peak
-    snr_min = 20.0   # Minimum SNR
+    snr_min = 10.0   # Minimum SNR
     rad_match = 10.0 # Maximum radius for matching (arcsec)
     rad_isol = 30.0  # Search radius to ensure isolated source (arcsec)
     bref = 20        # Reference beams against which to compare offsets
@@ -125,7 +125,6 @@ def process_sbid(flist, sbid, field_name):
     for incat in flist:             # for each beam
         bpos = incat.find("beam")
         beam = int(incat[bpos+4:bpos+6])
-        print(f"Beam {beam}: ", end="")
         cat = at.Table.read(incat)  # read the catalogue
         
         comp_sc = SkyCoord(Angle(cat["col_ra_deg_cont"], unit=u.deg), Angle(cat["col_dec_deg_cont"], unit=u.deg))
@@ -136,13 +135,13 @@ def process_sbid(flist, sbid, field_name):
         cat = cat[id_match]
 
         # Filter out weak sources and sources that may be resolved
-        filt_snr = (cat["col_flux_int"] / cat["col_rms_image"] >= snr_min)
-        filt_r_lo = (cat["col_flux_int"] / cat["col_flux_peak"] >= ares_min)
-        filt_r_hi = (cat["col_flux_int"] / cat["col_flux_peak"] <= ares_max)
-        cat = cat[filt_snr & filt_r_lo & filt_r_hi]
-#         comp_sc = comp_sc[filt_snr & filt_r_lo & filt_r_hi]
+#        filt_snr = (cat["col_flux_int"] / cat["col_rms_image"] >= snr_min)
+#        filt_r_lo = (cat["col_flux_int"] / cat["col_flux_peak"] >= ares_min)
+#        filt_r_hi = (cat["col_flux_int"] / cat["col_flux_peak"] <= ares_max)
+#        cat = cat[filt_snr & filt_r_lo & filt_r_hi]
+#        comp_sc = comp_sc[filt_snr & filt_r_lo & filt_r_hi]
         
-        print("%d sources" %(len(cat)))
+#        print(f"Beam %s: %d sources" %(beam, len(cat)))
         ra = cat[col['ra']]         
         dec = cat[col['dec']]
         srcs.append(SkyCoord(ra, dec, unit='deg'))
@@ -155,7 +154,6 @@ def process_sbid(flist, sbid, field_name):
         # maj_deconv.append(cat[col['maj_deconv']])
 
     # srcs, fluxes, pkfluxes,im_rms and maj all have 36 (beams) x nsrcs
-#    print("len(srcs)=",len(srcs), "len(srcs[0])=",len(srcs[0]))
     # At this point have srcs, fluxes, pkfluxes and im_rms
     
     # get the SNR for each source in each beam
@@ -164,7 +162,7 @@ def process_sbid(flist, sbid, field_name):
     # Construct disctionaries keyed by the beam pair
     # Each has lists of indices, separations, position angles, fluxes, SNRs, major axes, and deconvolved major axes
     # do both upper and lower triangles
-    max_sep = 10.0 * u.arcsec
+    max_sep = rad_match * u.arcsec
     indices = {}
     seps = {}
     pas = {}
@@ -191,7 +189,7 @@ def process_sbid(flist, sbid, field_name):
                 majdict[key] = [maj[j][sel],maj[i][idx[sel]]]
                 # majdcdict[key] = [maj_deconv[j][sel],maj_deconv[i][idx[sel]]]
                 sources[key] = [sj,si]
-                # print(key, len(indices[key]))
+
     # indices[j,i], seps[j,i], pas[j,i], fluxdict[j,i], snrdist[j,i] and sources[j,i] are dictionaries holding cross-matched value pairs between beams j and i
     
     # For each of the beam pairs, calculate stats relating to offsets (median, std, ncross-matches)
@@ -211,15 +209,11 @@ def process_sbid(flist, sbid, field_name):
                 dxs_std[b,i] = np.std(dx) #dx.std()
                 dys_std[b,i] = np.std(dy) #dy.std()
                 ns[b,i] = len(dx)
-#                print("%d-%d %5.1f %5.1f" %(i, b, dxs[i,b], dys[i,b]))
+
     pfile = f'medians/beamwise_medians_SB{sbid}.pkl'
     with open(pfile, 'wb') as f:
         pickle.dump([dxs,dys,dxs_std,dys_std,ns], f)
 
-#    for beam in range(36):
-#        if beam == bref:
-#            continue
-#        print("%d-20: %.3f,%.3f,%d" %(beam,dxs[beam,bref],dys[beam,bref],ns[beam,bref]))
     # Some dxs and dys will have nans in them if there were no fits.
 
     # Objective function to be minimized
@@ -254,8 +248,8 @@ def process_sbid(flist, sbid, field_name):
 
     fitted_rel = np.array(fitted_rel)
 
-    for beam in range(36):
-        print("%2d: %6.3f,%6.3f" %(beam, fitted_rel[0][beam], fitted_rel[1][beam]))
+#    for beam in range(36):
+#        print("%2d: %6.3f,%6.3f" %(beam, fitted_rel[0][beam], fitted_rel[1][beam]))
 
     pfile1 = f'pickle/beamwise_fitted_rel_SB{sbid}_{bref}.pkl'
     with open(pfile1, 'wb') as f:
@@ -275,5 +269,4 @@ if len(flist) != 36:
 flist.sort()
 fname = flist[0]
 field_name = fname.split(".")[2]
-#field_name = "RACS"
 nf, bref, fitted_rel = process_sbid(flist, sbid, field_name)

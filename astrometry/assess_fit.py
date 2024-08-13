@@ -194,10 +194,16 @@ warnings.filterwarnings("ignore")
 #    sys.exit("Usage:\n\t%s [NVSS|ICRF|VLASS] sbid" %(sys.argv[0]))
 #ref = sys.argv[1]
 sbid = int(sys.argv[1])
+
 if len(sys.argv)==3:
     maxd_from_beam = float(sys.argv[2])
+    maxd_beam_to_beam = 1.0 # Maximum distance between beams to consider
 
-maxd_beam_to_beam = 1.5 # Maximum distance between beams to consider
+if len(sys.argv)==4:
+    maxd_beam_to_beam = float(sys.argv[2]) # Maximum distance between beams to consider
+    maxd_from_beam = float(sys.argv[3])
+
+db_base_path = "/Users/len067/Desktop/aces/calibration/askap_surveys"
 
 cat_list = glob.glob("cat/*SB%d*beam*components.xml" %(sbid))
 cat_list.sort()
@@ -205,7 +211,7 @@ cdata = cat_list[0].split(".")
 field_name = cdata[2]
 
 # Read beam positions for current field
-beam_inf = Table.read('/Users/len067/Desktop/aces/calibration/askap_surveys/RACS/db/epoch_9/beam_inf_%d-%s.csv' %(sbid, field_name))
+beam_inf = Table.read('%s/RACS/db/epoch_9/beam_inf_%d-%s.csv' %(db_base_path, sbid, field_name))
 beam_sc = SkyCoord(Angle(beam_inf["RA_DEG"], unit=u.deg),Angle(beam_inf["DEC_DEG"], unit=u.deg), frame='fk5')
 
 nso, xo_mean,xo_std, yo_mean,yo_std = compare(cat_list, beam_sc, maxd_beam_to_beam, maxd_from_beam)

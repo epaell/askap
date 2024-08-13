@@ -12,14 +12,14 @@ import warnings
 
 def apply_fit(flist, sbid, field_name, bref, fit):
     flist.sort()
-    print(f'field {field_name}')
+#    print(f'field {field_name}')
 
     # Depending on the format work out what columns to use
     fit_deg = fit / 3600.0  # Convert fitted offset to degrees
     # get the combined list of coordinates, fluxes, peaks, rms and major axis
     for beam in range(36):             # for each beam
         incat = flist[beam]
-        print(f"Reading {incat}: ", end="")
+#        print(f"Reading {incat}: ", end="")
         cat = at.Table.read(incat)  # read the catalogue
         dra = Angle(np.zeros(len(cat), dtype=np.float128) + fit_deg[0][beam], u.deg)
         ddec = Angle(np.zeros(len(cat), dtype=np.float128) + fit_deg[1][beam], u.deg)
@@ -27,7 +27,7 @@ def apply_fit(flist, sbid, field_name, bref, fit):
         sc_ofs = sc.spherical_offsets_by(dra, ddec)
         cat['col_ra_deg_cont'] = sc_ofs.ra.deg
         cat['col_dec_deg_cont'] = sc_ofs.dec.deg
-        print("%d sources %.3f %.3f" %(len(cat), fit_deg[0][beam]*3600.0, fit_deg[1][beam]*3600.0))
+#        print("%d sources %.3f %.3f" %(len(cat), fit_deg[0][beam]*3600.0, fit_deg[1][beam]*3600.0))
         cname = incat.split("/")[-1]
         fout = "fitted/%s" %(cname.replace('.xml', '_fit.xml'))
         cat.write(fout, format='votable', overwrite=True)
