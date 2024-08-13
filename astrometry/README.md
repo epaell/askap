@@ -1,7 +1,7 @@
 # astrometry
 Tools to check for astrometric variations between per-beam ASKAP field catalogues.
 
-#Tools
+# Tools
 
 fit_astrometry.py sbid - examines beam-wise cataloues for the given SBID and generates offsets to align beams
 
@@ -15,7 +15,7 @@ sbid,field_name,nso,xo_mean,xo_std,yo_mean,yo_std,nsf,xf_mean,xf_std,yf_mean,yf_
 
 where the first set of values pertain to the original catalogues ("o") i.e. nso is the number of sources used in the assessment, xo_mean is the mean offset in RA, xo_std is the standard deviation of the offsets in RA, yo_mean is the mean offset in Dec, yo_std is the standard deviation of the offsets in declination. The second set of values pertain to the fitted catalogues ("f").
 
-#Setup
+# Setup
 
 db_base_path should be set to point to the survey database in assess_fit.py and plot_fit.py
 
