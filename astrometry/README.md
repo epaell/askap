@@ -9,7 +9,7 @@ plot_fit.py sbid - plot the offset corrections for the specified SBID
 
 apply_fit.py sbid - takes offset corrections and applies to the beam-wise catalogues for the specified SBID
     
-assess_fit.py sbid maxd maxr - assess the fit by comparing all beams seperated by no more than maxd degrees and using all sources no further than maxr degrees from the beam centre. The script will generate a CSV-format line with the following information:
+assess_fit.py sbid maxd maxr - assess the fit by comparing all beams seperated by no more than maxd degrees (1.0 to use only nearest beams) and using all sources no further than maxr degrees from the beam centre (0.9 deg works well). The script will generate a CSV-format line with the following information:
     
 sbid,field_name,nso,xo_mean,xo_std,yo_mean,yo_std,nsf,xf_mean,xf_std,yf_mean,yf_std,flag
 
