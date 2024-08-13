@@ -15,9 +15,15 @@ sbid,field_name,nso,xo_mean,xo_std,yo_mean,yo_std,nsf,xf_mean,xf_std,yf_mean,yf_
 
 where the first set of values pertain to the original catalogues ("o") i.e. nso is the number of sources used in the assessment, xo_mean is the mean offset in RA, xo_std is the standard deviation of the offsets in RA, yo_mean is the mean offset in Dec, yo_std is the standard deviation of the offsets in declination. The second set of values pertain to the fitted catalogues ("f").
 
+run.py sbid - fits astrometry, applies it, plots it and assesses the result for a single SBID.
+
+process_all.py - fits astrometry, applies it and plots the result for all sbids using multiprocessing.
+
 # Setup
 
-db_base_path should be set to point to the survey database in assess_fit.py and plot_fit.py
+db_base_path should be set to point to the survey database in assess_fit.py, plot_fit.py and process_all.py
+
+max_concurrent in process_all.py should be set for the number of cores available to maximise processing speed
 
 Directory structure:
 
