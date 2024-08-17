@@ -19,7 +19,7 @@ def read_known_footprints():
     fields = []
     for fname in ["vast_fields.csv", "emu_fields.csv", "racs_fields.csv"]:
         sst_data = Table.read(fname, format='csv')
-        sst_data = sst_data[np.where(sst_data["SBID"]>0)]
+#        sst_data = sst_data[np.where(sst_data["SBID"]>0)]
         if len(fields) == 0:
             fields = sst_data
         else:
@@ -92,7 +92,7 @@ def get_states(data):
         obs_status = "Slewing"
     return obs_status, ant_states
 
-def dump_summary(fields, footprints, current_time, field_name, sbid, coord, duration, progress, missing_ants, obs_status, ant_states, status, weather):
+def dump_summary(fields, footprints, start_time, current_time, field_name, sbid, coord, duration, progress, missing_ants, obs_status, ant_states, status, weather, footprint):
     print("Current time: %s" %(current_time))
     print("Currently observing: %s" %(field_name))
     print("Scheduling block: %d" %(sbid))
@@ -106,17 +106,22 @@ def dump_summary(fields, footprints, current_time, field_name, sbid, coord, dura
     else:
         print("Missing antennas: %s" %(", ".join(missing_ants)))
 
-    ra_deg, dec_deg, footprint, pitch, rotation = get_footprint(fields, footprints, field_name)
-    sc = SkyCoord(Angle(ra_deg, unit=u.deg), Angle(dec_deg, unit=u.deg), frame='fk5')
+    fra_deg, fdec_deg, ffootprint, fpitch, frotation = get_footprint(fields, footprints, field_name)
+    print("ffootprint=",ffootprint)
+    sc = SkyCoord(Angle(fra_deg, unit=u.deg), Angle(fdec_deg, unit=u.deg), frame='fk5')
     
-    if footprint == "":
-        print("Footprint: Unknown")
+    print("Footprint:")
+    print("  Footprint   : %s" %(footprint["name"]))
+    print("  Pitch       : %.2f" %(footprint["pitch"]))
+    print("  Rotation    : %.1f" %(footprint["rotation"]))
+    if ffootprint == "":
+        print("Unknown DB footprint")
     else:
-        print("Footprint:")
+        print("DB Footprint:")
         print("  Coordinate  : %s" %(sc.to_string(style='hmsdms')))
-        print("  Footprint   : %s" %(footprint))
-        print("  Pitch       : %.2f" %(pitch))
-        print("  Rotation    : %.1f" %(rotation))
+        print("  Footprint   : %s" %(ffootprint))
+        print("  Pitch       : %.2f" %(fpitch))
+        print("  Rotation    : %.1f" %(frotation))
 #    print("status: %s" %(status))
 #    print("stateError: %s" %(stateError))
     print("Weather conditions")
@@ -153,9 +158,11 @@ while True:
     stateError = data['stateError']
     status = data['status']
     weather = data['weather']
+    footprint = data["footprint"]
+    start_time = data["startTime:"]
 
     missing_ants = find_missing(data)
     obs_status, ant_states = get_states(data)
     
-    dump_summary(fields, footprints, current_time, field_name, sbid, coord, duration, progress, missing_ants, obs_status, ant_states, status, weather)
+    dump_summary(fields, footprints, start_time, current_time, field_name, sbid, coord, duration, progress, missing_ants, obs_status, ant_states, status, weather, footprint)
     sleep(60)
