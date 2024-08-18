@@ -159,7 +159,7 @@ while True:
     status = data['status']
     weather = data['weather']
     footprint = data["footprint"]
-    start_time = data["startTime:"]
+    start_time = data["startTime"]
 
     missing_ants = find_missing(data)
     obs_status, ant_states = get_states(data)
