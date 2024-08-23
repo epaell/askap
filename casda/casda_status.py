@@ -1,14 +1,22 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import numpy as np
 from astroquery.utils.tap.core import Tap
 import datetime
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle, SkyCoord
 from astropy import units as u
+import sys
+import warnings
 
+# Generate a list of observations in CASDA but not yet released
+
+warnings.filterwarnings("ignore")
+
+if len(sys.argv) != 2:
+    sys.exit("Usage %s <project code>\n e.g. %s AS201\n" %(sys.argv[0], sys.argv[0]))
 proj_code = 'AS201'
 
-casda_tap = Tap("https://casda.csiro.au/casda_vo_tools/tap")
+casda_tap = Tap(url="https://casda.csiro.au/casda_vo_tools/tap")
 
 job = casda_tap.launch_job_async("SELECT sbid,obs_start,obs_end,event_date,event_type,obs_program,project_code FROM casda.observation_event WHERE project_code='%s'" %(proj_code))
 results_table = job.get_results()
@@ -46,7 +54,7 @@ latitude = Angle("-26:41:46.0", unit=u.deg)
 longitude = Angle("116:38:13.0", unit=u.deg)
 observing_location = EarthLocation(lat=latitude, lon=longitude)
 
-t_now = Time(datetime.datetime.utcnow(), scale='utc', location=observing_location)
+t_now = Time(datetime.datetime.now(datetime.UTC), scale='utc', location=observing_location)
 for sbid in np.unique(unreleased):
     if sbid_status[sbid] in ["REJECTED", "DELETED"]:
         continue
