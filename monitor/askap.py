@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from urllib.request import urlopen
 import json 
 from astropy.coordinates import SkyCoord, Angle
@@ -92,36 +92,39 @@ def get_states(data):
         obs_status = "Slewing"
     return obs_status, ant_states
 
-def dump_summary(fields, footprints, start_time, current_time, field_name, sbid, coord, duration, progress, missing_ants, obs_status, ant_states, status, weather, footprint):
-    print("Current time: %s" %(current_time))
-    print("Currently observing: %s" %(field_name))
-    print("Scheduling block: %d" %(sbid))
-    print("Coordinate: %s" %(coord.to_string(style='hmsdms')))
-    print("Total duration %.1f s" %(duration))
-    print("Progress: %.1f %%" %(progress))
+def dump_summary(fields, footprints, start_time, current_time, field_name, sbid, coord, pol, duration, progress, missing_ants, obs_status, ant_states, status, weather, footprint):
+    print("Current time (UTC): %s" %(current_time))
     print("Observing status: %s" %(obs_status))
-#    print("%d tracking; %d slewing; %d idle; %d stowed" %(ant_states["Tracking"], ant_states["Slewing"], ant_states["Idle"], ant_states["Stowed"]))
-    if len(missing_ants) == 0:
-        print("All antennas available")
-    else:
-        print("Missing antennas: %s" %(", ".join(missing_ants)))
+    # Observing parameters only make sense when not in Stowed state
+    if (obs_status in ["Stowed"]) == False:
+        print("Currently observing: %s" %(field_name))
+        print("Scheduling block: %d" %(sbid))
+        print("Coordinate: %s" %(coord.to_string(style='hmsdms')))
+        print("Total duration %.1f s" %(duration))
+        print("Progress: %.1f %%" %(progress))
+    #    print("%d tracking; %d slewing; %d idle; %d stowed" %(ant_states["Tracking"], ant_states["Slewing"], ant_states["Idle"], ant_states["Stowed"]))
+        if len(missing_ants) == 0:
+            print("All antennas available")
+        else:
+            print("Missing antennas: %s" %(", ".join(missing_ants)))
 
-    fra_deg, fdec_deg, ffootprint, fpitch, frotation = get_footprint(fields, footprints, field_name)
-    print("ffootprint=",ffootprint)
-    sc = SkyCoord(Angle(fra_deg, unit=u.deg), Angle(fdec_deg, unit=u.deg), frame='fk5')
+        fra_deg, fdec_deg, ffootprint, fpitch, frotation = get_footprint(fields, footprints, field_name)
+        print("ffootprint=",ffootprint)
+        sc = SkyCoord(Angle(fra_deg, unit=u.deg), Angle(fdec_deg, unit=u.deg), frame='fk5')
     
-    print("Footprint:")
-    print("  Footprint   : %s" %(footprint["name"]))
-    print("  Pitch       : %.2f" %(footprint["pitch"]))
-    print("  Rotation    : %.1f" %(footprint["rotation"]))
-    if ffootprint == "":
-        print("Unknown DB footprint")
-    else:
-        print("DB Footprint:")
-        print("  Coordinate  : %s" %(sc.to_string(style='hmsdms')))
-        print("  Footprint   : %s" %(ffootprint))
-        print("  Pitch       : %.2f" %(fpitch))
-        print("  Rotation    : %.1f" %(frotation))
+        print("Footprint:")
+        print("  Footprint    : %s" %(footprint["name"]))
+        print("  Pitch        : %.2f" %(footprint["pitch"]))
+        print("  Rotation     : %.1f" %(footprint["rotation"]))
+        print("  Polarisation : %.1f" %(pol))
+        if ffootprint == "":
+            print("Unknown DB footprint")
+        else:
+            print("DB Footprint:")
+            print("  Coordinate  : %s" %(sc.to_string(style='hmsdms')))
+            print("  Footprint   : %s" %(ffootprint))
+            print("  Pitch       : %.2f" %(fpitch))
+            print("  Rotation    : %.1f" %(frotation))
 #    print("status: %s" %(status))
 #    print("stateError: %s" %(stateError))
     print("Weather conditions")
@@ -152,6 +155,7 @@ while True:
     field_name = data['alias']
     current_time = data['infoTime']
     coord = median_ra_dec(data)
+    pol = np.median(data['polarisation'])
 
     progress = data['progress']
     duration = data['duration']
@@ -164,5 +168,5 @@ while True:
     missing_ants = find_missing(data)
     obs_status, ant_states = get_states(data)
     
-    dump_summary(fields, footprints, start_time, current_time, field_name, sbid, coord, duration, progress, missing_ants, obs_status, ant_states, status, weather, footprint)
+    dump_summary(fields, footprints, start_time, current_time, field_name, sbid, coord, pol, duration, progress, missing_ants, obs_status, ant_states, status, weather, footprint)
     sleep(60)
