@@ -85,15 +85,24 @@ def flatten(data):
     fdata["coord"] = median_ra_dec(fdata)
     fdata["sbid"] = int(fdata["id"])
     # Convert these key value to float
-    floats = ["duration", "progress", "pol_axis_angle", "temperature", "humidity", "pressure", "windSpeed", "rotation", "pitch"]
-    for key in floats:
+    floatdefs = {}
+    floatdefs["duration"] = 0.0
+    floatdefs["progress"] = 0.0
+    floatdefs["pol_axis_angle"] = 0.0
+    floatdefs["temperature"] = 0.0
+    floatdefs["humidity"] = 0.0
+    floatdefs["pressure"] = 0.0
+    floatdefs["windSpeed"] = 0.0
+    floatdefs["rotation"] = 0.0
+    floatdefs["pitch"] = 0.0
+    for key in floatdefs.keys():
         if key in fdata:
             if fdata[key] == 'null':
-                data[key] = np.nan
+                data[key] = floatdefs[key]
             else:
                 fdata[key] = float(fdata[key])
         else:
-            fdata[key] = np.nan
+            fdata[key] = floatdefs[key]
     keyValues = ["infoTime", "obsStatus", "field_name", "coord", "startTime", "missingAnts", "name"]
     for key in keyValues:
         if key in fdata:
