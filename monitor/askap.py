@@ -42,12 +42,14 @@ def find_missing(data):
     ants = data['antennasList']
     nant = data['antennasIn']
     missing_ants = []
+    missing = []
     if nant != 36:
         for ant in range(1,37):
             if ant in ants:
                 continue
             missing_ants.append("ak%02d" %(ant))
-    return missing_ants
+            missing.append(ant-1)
+    return missing_ants, missing
 
 def get_states(data):
     state = data['state']
@@ -76,14 +78,25 @@ def flatten(data):
                 fdata[key2] = dataval[key2]
         else:
             fdata[key1] = dataval
-    fdata["medianAzimuth"] = np.median(fdata["azimuth"])
+    missingAnts,missing = find_missing(fdata)
+    fdata["missingAnts"] = missingAnts
+    for i in range(len(fdata["azimuth"])):
+        if fdata["azimuth"][i] is None:
+            data["azimuth"][i] = np.nan
+    # For antennas that aren't listed assume they are bad and so mark the antenna-dependent data
+    # as bad.
+    for i in missing:
+        fdata["azimuth"][i] = np.nan
+        fdata["elevation"][i] = np.nan
+        fdata["polarisation"][i] = np.nan
+
+    fdata["medianAzimuth"] = np.nanmedian(fdata["azimuth"])
     obs_status, ant_states = get_states(fdata)
     fdata["obsStatus"] = obs_status
     fdata["antStates"] = ant_states
-    missing = find_missing(fdata)
-    fdata["missingAnts"] = missing
     fdata["coord"] = median_ra_dec(fdata)
     fdata["sbid"] = int(fdata["id"])
+    
     # Convert these key value to float
     floatdefs = {}
     floatdefs["duration"] = 0.0
