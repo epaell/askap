@@ -14,8 +14,7 @@ warnings.filterwarnings("ignore")
 
 if len(sys.argv) != 2:
     sys.exit("Usage %s <project code>\n e.g. %s AS201\n" %(sys.argv[0], sys.argv[0]))
-proj_code = 'AS201'
-
+proj_code = sys.argv[1]
 casda_tap = Tap(url="https://casda.csiro.au/casda_vo_tools/tap")
 
 job = casda_tap.launch_job_async("SELECT sbid,obs_start,obs_end,event_date,event_type,obs_program,project_code FROM casda.observation_event WHERE project_code='%s'" %(proj_code))
