@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 from astroquery.utils.tap.core import Tap
+from astroquery import log
 import datetime
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle, SkyCoord
@@ -11,7 +12,7 @@ import warnings
 # Generate a list of observations in CASDA but not yet released
 
 warnings.filterwarnings("ignore")
-
+log.setLevel("WARNING")
 if len(sys.argv) != 2:
     sys.exit("Usage %s <project code>\n e.g. %s AS201\n" %(sys.argv[0], sys.argv[0]))
 proj_code = sys.argv[1]
