@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -221,12 +221,16 @@ vis_feed = t.getcol('FEED1', 0, 1)
 beam = vis_feed[0]
 
 if tableexists("%s/FIELD_OLD" %(ms)) == False:
-    print("This is the first time fix_dir has been run on this measurement set")
     print("Making copy of original FIELD table")
     tablecopy(tablename="%s/FIELD" %(ms), newtablename="%s/FIELD_OLD" %(ms))
 else:
-    print("fix_dir has already been run on this measurement set")
     print("Original copy of FIELD table is being used")
+
+if tableexists("%s/FEED_OLD" %(ms)) == False:
+    print("Making copy of original FEED table")
+    tablecopy(tablename="%s/FEED" %(ms), newtablename="%s/FEED_OLD" %(ms))
+else:
+    print("Original copy of FEED table is being used")
 
 print("Reading phase directions")
 tp = table("%s/FIELD_OLD" %(ms), readonly=True, ack=False)
@@ -237,10 +241,17 @@ tp.close()
 n_fields = ms_phase.shape[0]
 print("Found %d fields in FIELD table" %(n_fields))
 
+# Open up the MS FEED table so we can work out what the offset is for the beam.
+tf = table("%s/FEED" %(ms), readonly=False, ack=False)
+offset = tf.getcol("BEAM_OFFSET")
+offset = offset - offset
+offset = tf.putcol("BEAM_OFFSET", offset)
+tf.close()
+
 # Open up the MS FIELD table so it can be updated.
 tp = table("%s/FIELD" %(ms), readonly=False, ack=False)
 # Open up the MS FEED table so we can work out what the offset is for the beam.
-tf = table("%s/FEED" %(ms), readonly=True, ack=False)
+tf = table("%s/FEED_OLD" %(ms), readonly=True, ack=False)
 # The offsets are assumed to be the same for all antennas so get a list of all
 # the offsets for one antenna and for the current beam. This should return offsets
 # required for each field.
@@ -252,7 +263,7 @@ print("Found %d offsets in FEED table for beam %d" %(n_offsets, beam))
 for offset_index in range(n_offsets):
     offset = t1.getcol("BEAM_OFFSET")[offset_index]
     print("Offset %d : t=%f-%f : (%fd,%fd)" %(offset_index, offset_times[offset_index]-offset_intervals[offset_index]/2.0,offset_times[offset_index]+offset_intervals[offset_index]/2.0, -offset[0][0]*180.0/np.pi, offset[0][1]*180.0/np.pi))
-    
+
 # Update the beam position for each field
 for field in range(n_fields):
     t = table(ms, readonly=True, ack=False)
@@ -260,7 +271,8 @@ for field in range(n_fields):
     tfdata = taql("select from $t where FIELD_ID==$field and FEED1==$beam and ANTENNA1==0 and ANTENNA2==0")
     time_data = tfdata.getcol("TIME")
     if len(time_data) == 0:
-        sys.exit("Couldn't find valid data for field %d" %(field))
+#        print("Warning: Couldn't find valid data for field %d" %(field))
+        continue
     
     offset_index = -1
     for offset in range(n_offsets):
