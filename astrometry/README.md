@@ -23,6 +23,8 @@ process_all.py - fits astrometry, applies it and plots the result for all sbids 
 
 plot_all.py - Reads the file check_all.csv (which has all a header and results from assess_fit.py appended to it) and plots a summary of the stats.
 
+unwise/. - Contains tools that attempt to reference beam catalogues to UNWISE (based on Tims code).
+
 # Setup
 
 db_base_path should be set to point to the survey database in assess_fit.py, db.py, plot_all.py, plot_fit.py and process_all.py
