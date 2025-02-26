@@ -139,6 +139,8 @@ def woffset(data, oldw, neww, lambdas):
 
 # List of valid targets that can be shifted to
 valid_targets = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"]
+valid_destinations = ["field", "target"]
+valid_columns = ["DATA", "CORRECTED_DATA", "MODEL_DATA"]
 
 # Observatory location (change for your favourite observatory - currently ASKAP)
 latitude = Angle("-26:41:46.0", unit=u.deg)
@@ -146,8 +148,8 @@ longitude = Angle("116:38:13.0", unit=u.deg)
 observing_location = EarthLocation(lat=latitude, lon=longitude)
 
 # Basic command-line parameter checks
-if len(sys.argv) != 3:
-    sys.exit("Usage: %s file.ms [%s]" %(sys.argv[0], " | ".join(valid_targets)))
+if len(sys.argv) != 5:
+    sys.exit("Usage: %s file.ms target datacolumn destination\nWhere:\n\ttarget=[%s]\n\tdatacolumn=[%s]\n\tdestination=[%s]" %(sys.argv[0], " | ".join(valid_targets), " | ".join(valid_columns), " | ".join(valid_destinations)))
     
 ms = sys.argv[1]
 if ms[-3:] != ".ms":
@@ -157,16 +159,25 @@ target = sys.argv[2]
 if (target in valid_targets) == False:
     sys.exit("Target must be one of:  %s" %(",".join(valid_targets)))
 
+# Which data column to work on e.g. DATA, CORRECTED_DATA
+data_column = sys.argv[3]
+if (data_column in valid_columns) == False:
+    sys.exit("datacolumn must be one of:  %s" %(",".join(valid_columns)))
+
+# Shift to "target" or shift back to "field"
+destination = sys.argv[4]
+if (destination in valid_destinations) == False:
+    sys.exit("destination must be one of: %s" %(",".join(valid_destinations)))
+
 # The name of the target ms (just append the target name to the ms)
 ms_new = ms.replace(".ms", "_%s.ms" %(target))
 
-# Phase rotate from the field to the target solar system object
-phase_rotate_to_target(observing_location, ms, ms_new, target, False, "DATA")
+if destination in ["target"]:
+    # Phase rotate from the field to the target solar system object
+    phase_rotate_to_target(observing_location, ms, ms_new, target, False, data_column)
+else:
+    # Phase rotate from the target solar system object back to the field
+    ms = ms.replace(".ms", "_%s.ms" %(target))
+    ms_new = ms_new = ms.replace(".ms", "_field.ms")
 
-# Any imaging, subtraction, modeling, peeling should happen here
-
-# Phase rotate from the target solar system object back to the field
-ms = ms.replace(".ms", "_%s.ms" %(target))
-ms_new = ms_new = ms.replace(".ms", "_new.ms")
-
-phase_rotate_to_target(observing_location, ms, ms_new, target, True, "DATA")
+    phase_rotate_to_target(observing_location, ms, ms_new, target, True, data_column)
