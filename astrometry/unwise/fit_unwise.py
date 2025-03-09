@@ -19,49 +19,13 @@ import sys
 Paths = tuple[Path, ...]
 
 # Extracts per-beam catalogues and merges them into a single field catalogue containing all unwise sources.
-def download_unwise(field_name, beam_sc, radius_deg: float=5.):
-    unwise = "II/363/unwise"
+def load_unwise(field_name):
     field_cat = None
-    if os.path.exists(f"unwise_{field_name}.fits") == True:
-        field_cat = Table.read(f"unwise_{field_name}.fits", format="fits")
+    if os.path.exists(f"../unwise/unwise_{field_name}.fits") == True:
+        field_cat = Table.read(f"../unwise/unwise_{field_name}.fits", format="fits")
         print("%d rows loaded" %(len(field_cat)))
         return field_cat
-    
-    for beam in range(36):
-        print(f"Downloading {unwise} table for field {field_name} and beam:{beam}")
-        if os.path.exists(f"unwise_{field_name}_beam{beam:02d}.fits") == False:
-            os.system("rm -fr /home/elenc/.astropy/cache/astroquery/Vizier")
-            while True:
-                try:
-                    vizier.Vizier.ROW_LIMIT = -1
-                    unwise_tables = vizier.Vizier(columns=["RAJ2000", "DEJ2000"], row_limit=-1, timeout=720).query_region(beam_sc[beam], catalog=unwise, width=radius_deg*u.deg)
-                except:
-                    print("Retry in 120s")
-                    time.sleep(120)
-                    continue
-                break
-            assert len(unwise_tables) == 1
-            beam_cat = unwise_tables[0]
-            for icol, column in enumerate(beam_cat.itercols()):
-                beam_cat.columns[icol].description = ''
-                beam_cat.meta['description'] = ''
-
-            beam_cat.write(f"unwise_{field_name}_beam{beam:02d}.fits", format="fits", overwrite=False)
-        else:
-            print(f"Found cached file, reading unwise_{field_name}_beam{beam:02d}.fits")
-            beam_cat = Table.read(f"unwise_{field_name}_beam{beam:02d}.fits", format="fits")
-        print("%d rows downloaded" %(len(beam_cat)))
-        print("Merging into field catalogue")
-        if beam == 0:
-            field_cat = beam_cat
-        else:
-            field_cat = unique(vstack([field_cat, beam_cat]))
-
-    field_cat.write("unwise_%s.fits" %(field_name), format="fits", overwrite=True)
-    print("Cleaning cached beam catalogues")
-    os.system(f"rm -fr unwise_{field_name}_beam*fits")
-    
-    return field_cat
+    return None 
 
 @dataclass
 class Catalogue:
@@ -238,7 +202,6 @@ def find_minimum_offset_space(offset_space):
     return minimum_ra, minimum_dec, minimum_sep
 
 def get_offset_space(cata, unwise_table, window, plot=True, radius_deg: float=5.):
-#    unwise_table = download_unwise(cata, radius_deg=radius_deg)
     unwise_sky = SkyCoord(unwise_table["RAJ2000"], unwise_table["DEJ2000"], unit=(u.deg, u.deg))
     
     shifted_table = cata.table.copy()
@@ -335,18 +298,24 @@ unique_fields = np.unique(field_beams["FIELD_NAME"])
 beam_inf = field_beams[np.where(field_beams["FIELD_NAME"]==field_name)]
 beam_sc = SkyCoord(Angle(beam_inf["RA_DEG"], unit=u.deg), Angle(beam_inf["DEC_DEG"], unit=u.deg), frame='fk5')
 
-unwise_field_cat = download_unwise(field_name, beam_sc)
+unwise_field_cat = load_unwise(field_name)
+niter = 6
+zoom = 4.0
 for beam in range(36):
-    window = (-10.0,10.0,-10.0,10.0,1.0)
-    offset_results = get_offset_space(catas[beam], unwise_field_cat, window=window)
-    min_ra, min_dec, min_sep = find_minimum_offset_space(offset_results)
-    window=(min_ra-1.0,min_ra+1.0,min_dec-1.0,min_dec+1.0,0.1)
-    offset_results = get_offset_space(catas[beam], unwise_field_cat, window=window)
-    min_ra, min_dec, min_sep = find_minimum_offset_space(offset_results)
-    window=(min_ra-0.1,min_ra+0.1,min_dec-0.1,min_dec+0.1,0.01)
-    offset_results = get_offset_space(catas[beam], unwise_field_cat, window=window)
-    min_ra, min_dec, min_sep = find_minimum_offset_space(offset_results)
-    plot_offset_grid_space(f"SB{sbid}.{field_name}_beam{beam:02d}.offset_grid.png", offset_results, window=window)
+    width = 25.0
+    delta = 5.0
+    min_ra = min_dec = 0
+    for iteration in range(niter):
+        window = (min_ra-width, min_ra+width, min_dec-width, min_dec+width, delta)
+#        print(window)
+        offset_results = get_offset_space(catas[beam], unwise_field_cat, window=window)
+        min_ra, min_dec, min_sep = find_minimum_offset_space(offset_results)
+        if iteration==0:
+            plot_offset_grid_space(f"SB{sbid}.{field_name}.beam{beam:02d}.offset.grid.png", offset_results, window=window)
+        width /= zoom
+        delta /= zoom
     print(f"Beam:{beam:02d} : {min_ra:6.3f},{min_dec:6.3f}")
     fout.write("%d,%f,%f\n" %(beam, min_ra, min_dec))
+os.system(f"montage SB{sbid}*beam*.png -geometry +6+6 SB{sbid}.{field_name}.offset_grid.png")
+os.system(f"rm SB{sbid}*beam*.png")
 fout.close()
