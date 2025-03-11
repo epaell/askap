@@ -74,14 +74,12 @@ def weighted_mean_and_std(values, weights):
     variance = np.average(np.power(values-mean, 2.0), weights=weights)
     return (mean, np.sqrt(variance))
 
-def compare(comp_type, ref_sc, cat_list, dxs, dys):
+def compare(ref_sc, cat_list, dxs, dys, max_sep):
     ares_min = 0.2   # Minimum ratio of int / peak
     ares_max = 1.2   # Maximum ratio of int / peak
     snr_min = 20.0   # Minimum SNR
     rad_match = 15.0 # Maximum radius for matching (arcsec)
     rad_isol = 20.0  # Search radius to ensure isolated source (arcsec)
-    central = True
-    max_sep = 0.75   # Maximum distance from center of field (if central = True)
 
     # Work out if this is a selavy catalogue or something else (and so which columns to use)
     cat_file = cat_list[0]
@@ -118,8 +116,8 @@ def compare(comp_type, ref_sc, cat_list, dxs, dys):
         
         comp_sc = SkyCoord(Angle(comp_cat["ra"], unit=u.deg), Angle(comp_cat["dec"], unit=u.deg), frame='fk5')
         comp_sc = comp_sc.spherical_offsets_by(dxs[beam], dys[beam])
-        
-        if central:
+       
+        if max_sep != None:
             mean_sc = SkyCoord(Angle(np.median(comp_sc.ra.deg), unit=u.deg), Angle(np.median(comp_sc.dec.deg), unit=u.deg), frame='fk5')
             seps = mean_sc.separation(comp_sc).deg
             comp_sc = comp_sc[np.where(seps<max_sep)]
@@ -164,7 +162,7 @@ def compare(comp_type, ref_sc, cat_list, dxs, dys):
     # selavy-image.i.RACS_2049+25.SB45261.cont.taylor.0.restored.conv.components.xml
     cdata = comparison_cat.split(".")
 
-    print("%s,%s,%d,%d %.3f+/-%.3f %.3f+/-%.3f" %(comp_type, field_name, sbid, len(all_dx), np.mean(all_dx), np.std(all_dx), np.mean(all_dy), np.std(all_dy)))
+    return field_name, sbid, len(all_dx), np.mean(all_dx), np.median(all_dx), np.std(all_dx), np.mean(all_dy), np.median(all_dy), np.std(all_dy)
 
 warnings.filterwarnings("ignore")
 
@@ -174,7 +172,8 @@ if len(sys.argv) != 39:
 ref = sys.argv[1]
 cat_list = sys.argv[2:-1]
 offset_file = sys.argv[-1]
-    
+radius = None
+
 cat_list.sort()
 
 if  (ref in ["NVSS", "VLASS", "SUMSS", "ICRF", "VLBI", "FIRST"]) == False:
@@ -219,10 +218,13 @@ elif ref == "FIRST":
 shift = Table.read(offset_file, format="csv")
 dxs = Angle(shift["DXS"].value - shift["DXS"].value, u.arcsec)
 dys = Angle(shift["DYS"].value - shift["DYS"].value, u.arcsec)
-
-compare("original ", ref_sc, cat_list, dxs, dys)
+field_name, sbid, onx, odx_mean, odx_med, odx_std, ody_mean, ody_med, ody_std = compare(ref_sc, cat_list, dxs, dys, radius)
 
 dxs = -Angle(shift["DXS"].value, u.arcsec)
 dys = -Angle(shift["DYS"].value, u.arcsec)
+field_name, sbid, nx, dx_mean, dx_med, dx_std, dy_mean, dy_med, dy_std = compare(ref_sc, cat_list, dxs, dys, radius)
+fout = open(f"stats/SB{sbid}.{field_name}.ref.{ref}.stat.csv", "wt")
+fout.write("FIELD_NAME,SBID,ON,ODX_MEAN,ODX_MEDIAN,ODX_STD,ODY_MEAN,ODY_MEDIAN,ODY_STD,N,DX_MEAN,DX_MEDIAN,DX_STD,DY_MEAN,DY_MEDIAN,DY_STD\n")
+fout.write(f"{field_name},{sbid},{onx},{odx_mean:.3f},{odx_med:.3f},{odx_std:.3f},{ody_mean:.3f},{ody_med:.3f},{ody_std:.3f},{nx},{dx_mean:.3f},{dx_med:.3f},{dx_std:.3f},{dy_mean:.3f},{dy_med:.3f},{dy_std:.3f}\n")
+fout.close()
 
-compare("fitted   ", ref_sc, cat_list, dxs, dys)
