@@ -37,7 +37,13 @@ def field_survey(survey, ref_cat, ref_sc, field_name, beam_sc, radius_deg: float
         os.system(f"rm -fr {survey}/{survey}_{field_name}_beam*fits")
     return
 
-survey = "FIRST"
+surveys = ["NVSS", "VLASS", "SUMSS", "ICRF", "FIRST", "VLBI"]
+if len(sys.argv) != 2:
+    sys.exit("%s [%s]" %(sys.argv[0], "|".join(surveys)))
+
+survey = sys.argv[1]
+if (survey in surveys) == False:
+    sys.exit("%s [%s]" %(sys.argv[0], "|".join(surveys)))
 
 os.system("mkdir {survey}")
 if survey == "NVSS":
