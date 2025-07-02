@@ -79,8 +79,8 @@ def flatten(data):
         else:
             fdata[key1] = dataval
     missingAnts,missing = find_missing(fdata)
-    print(missingAnts)
-    print(missing)
+#    print(missingAnts)
+#    print(missing)
     fdata["missingAnts"] = missingAnts
     for i in range(len(fdata["azimuth"])):
         if fdata["azimuth"][i] is None:
